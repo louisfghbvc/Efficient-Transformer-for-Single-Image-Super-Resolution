@@ -7,5 +7,5 @@ class PrintLayer(nn.Module):
         super().__init__()
     
     def forward(self, x):
-        print(x)
+        print(x, x.shape)
         return x
