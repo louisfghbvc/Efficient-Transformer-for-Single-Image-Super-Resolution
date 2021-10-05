@@ -1,8 +1,6 @@
-import torch
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
-from torchvision import transforms
 
 
 class DIV2KDataset(Dataset):
