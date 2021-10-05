@@ -4,7 +4,7 @@ import re
 from typing import Optional
 class GlobalPathes:
     def __init__(self):
-        self.ROOT = Path("D:\Efficient-Transformer-for-Single-Image-Super-Resolution")
+        self.ROOT = Path(".")
         self.MODELS = Path(self.ROOT, "models").resolve()
         self.SCRIPTS = Path(self.ROOT, "scripts").resolve()
         self.CONFIGS = Path(self.ROOT, "configs").resolve()
@@ -16,6 +16,7 @@ class GlobalPathes:
     
 
 PATHS = GlobalPathes()
+print(PATHS.ROOT.absolute())
 def mkdir(p):
     p.mkdir(exist_ok = True, parents = True)
 def mkdirs(plist):
@@ -48,13 +49,14 @@ def getFinalEpoch(checkpointFolder):  # return last epoch num (final training sa
 
 
 
-    
+
     
 class Grad:
     def __enter__(self):
         ...
     def __exit__(self, type, value, traceback):
         ...
+
 
 
 

@@ -1,5 +1,5 @@
 import yaml
-from utils import *
+from .utils import *
 class ConfigParser:
     def __init__(self, filename="train") :
         self.filename = f"{filename}.yaml" if filename[-5:] != ".yaml" else filename
@@ -22,6 +22,8 @@ class ConfigParser:
 if __name__ == "__main__":
     a = ConfigParser("train.yaml")
         
+
+
 
 
 
