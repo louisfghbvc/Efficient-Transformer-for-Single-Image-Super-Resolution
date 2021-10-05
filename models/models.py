@@ -5,12 +5,11 @@ class ESRT (nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(32 * 32 * 3, 64),
+            nn.Linear(1, 2),
             nn.ReLU(),
-            nn.Linear(64, 32),
+            nn.Linear(2, 2),
             nn.ReLU(),
-            nn.Linear(32, 10)
+            nn.Linear(2, 1)
         )
     def forward(self,x):
         return self.layers(x)
