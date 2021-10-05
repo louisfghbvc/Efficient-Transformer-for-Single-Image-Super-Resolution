@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import torch
-import torch.optim as optim
-import tqdm
+from torch import optim
+from tqdm import tqdm
 
 from torch.utils.data import DataLoader
 from models.models import ESRT
@@ -12,27 +12,34 @@ from .configParser import ConfigParser
 class EfficientTransformerSR:
     def __init__(self, configs= "train"):
         self.configs = None
+        self.epoch = None
         self.initConfigs(configs)
+        self.initParams()
 
     def initConfigs(self, configs ):
         self.configs = configs or self.configs
         self.configs = ConfigParser(self.configs).content
-        mkdirs([PATHS.MODELS, PATHS.SCRIPTS, PATHS.SCRIPTS, PATHS.CONFIGS, PATHS.SHELLS])
+        mkdirs([PATHS.MODELS, PATHS.SCRIPTS, PATHS.SCRIPTS, PATHS.CONFIGS, PATHS.SHELLS, PATHS.CHECKPOINTS, PATHS.DATASETS])
         createFiles([PATHS.CONFIG_DEFAULT, PATHS.CONFIG_OVERRIDE])
         if self.configs["usegpu"] and torch.cuda.is_available():
             self.device = torch.device('cuda')
             torch.backends.cudnn.benchmark = True
         else:
             self.device = torch.device('cpu')
-            print('Warning! Using CPU.')
+            warn('Using CPU.')
+        
 
-    def epochsAction(self, action , start, end, loader):
+    def trainEpochs(self, start, end):
+        self.epoch = start
+        self.endEpoch = end
         for epoch in range(start, end):    
-            self.epochAction(action, loader)
             self.epoch = epoch
-            self.endEpoch = end
+            self.epochAction("train", self.trainloader)
+            self.epochAction("valid", self.validloader)
+            
     def forwardAction(self, x, y):
         device = self.device
+        if DEBUG: return torch.Tensor([[1]]), torch.Tensor([0])
         x, y = x.to(device), y.to(device)
         out = self.model(x)
         loss = self.criterion(out, y)
@@ -47,19 +54,23 @@ class EfficientTransformerSR:
             for x, y in batchLoader:
                 self.optimizer.zero_grad()
                 out, loss = self.forwardAction(x,y)
-                totalLoss += loss 
-                totalCorrect += torch.sum(y == out)
-                if isBackward:
-                    loss.backward()
-                    self.optimizer.step()
-                epochProgress = epochProgress if action == "test" else "1/1"
+                if not DEBUG:
+                    totalLoss += loss 
+                    totalCorrect += torch.sum(y == out)
+                    if isBackward:
+                        loss.backward()
+                        self.optimizer.step()
+                epochProgress = f"{self.epoch+1}/{self.configs['epochs']}" if action != "test" else "1/1"
                 
                 batchLoader.set_description(desc=f"[{epochProgress}] {action} loss : {round(loss.item() / len(y),2)} ")
     
-    def train(self):
-        self.epochsAction("train",self.trainloader)
-    def valid(self):
-        self.epochAction("valid",self.validloader)
+    def train(self, loader = None):
+        self.trainloader = loader or self.trainloader
+        self.load()
+        self.trainEpochs( self.startEpoch, self.configs["epochs"])
+    def valid(self, loader = None):
+        loader = loader or self.validloader
+        self.epochAction("valid",loader)
     def test(self):
         ...
     def saveObject(self, epoch):
@@ -70,7 +81,7 @@ class EfficientTransformerSR:
             "optimizer" : self.optimizer.state_dict()
         }
     def getCheckpointFolder(self):
-        return PATHS.CHECKPOINTS / f"ETSR-lr{ self.configs['learningRate'] }-flip{self.configs['randomFlip']}-psize{self.configs['patchSize']}" 
+        return PATHS.CHECKPOINTS / f"ETSR-lr{ self.configs['startLearningRate'] }-flip{self.configs['randomFlip']}-psize{self.configs['patchSize']}" 
     def save(self,fileName, epoch=1):
         fileName = fileName or f"epoch{epoch}.pth"
         saveFolder = self.getCheckpointFolder()
@@ -80,7 +91,9 @@ class EfficientTransformerSR:
     def load(self):
         saveFolder = self.getCheckpointFolder()
         startEpoch = self.configs["startEpoch"]
+        
         startEpoch = getFinalEpoch(saveFolder) if startEpoch == -1 else startEpoch # get real last epoch if -1
+        self.startEpoch = startEpoch
         if startEpoch == 0:
             return #if 0 no load (including can't find )
         
@@ -93,23 +106,15 @@ class EfficientTransformerSR:
     def loadParams(self):
         ...
     def initParams(self):
-        self.criterion = torch.nn.CrossEntropyLoss()
+        self.criterion = torch.nn.L1Loss()
         self.model = ESRT()
         self.model = self.model.to(self.device)
-        self.optimizer = torch.optim.Adam()
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlatea(self.optimizer)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=self.configs["startLearningRate"])
+        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer )
+        #(TODO) : implement loader 
+        self.trainloader = [(f"train x{i}","y{i}") for i in range(1000)] 
+        self.validloader = [(f"valid x{i}","y{i}") for i in range(500)]
 
-
-    def _get_scheduler(self, optimizer):
-        if self.config['scheduler']['name'] == 'plateau':
-            scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                             mode='min',
-                                                             patience=self.config['scheduler']['patience'],
-                                                             factor=self.config['scheduler']['factor'],
-                                                             min_lr=self.config['scheduler']['min_lr'])
-        else:
-            raise ValueError("Scheduler [%s] not recognized." % self.config['scheduler']['name'])
-        return scheduler
 
 if __name__ == '__main__':
     a = EfficientTransformerSR("train")
