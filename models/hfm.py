@@ -12,8 +12,7 @@ class HFM(nn.Module):
         assert tL.shape[2] % self.k == 0, 'h, w must divisible by k'
         tA = self.avgPool2D(tL)
         tU = self.upSample(tA)
-        x = tL - tU
-        return x
+        return tL - tU
 
 
 if __name__ == '__main__':
