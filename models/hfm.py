@@ -10,8 +10,8 @@ class HFM(nn.Module):
         self.k = k
 
         self.net = nn.Sequential(
-            nn.AvgPool2d(kernel_size=self.k, stride=self.k),
-            nn.Upsample(scale_factor=self.k, mode='nearest'),
+            nn.AvgPool2d(kernel_size = self.k, stride = self.k),
+            nn.Upsample(scale_factor = self.k, mode = 'nearest'),
         )
 
     def forward(self, tL):
