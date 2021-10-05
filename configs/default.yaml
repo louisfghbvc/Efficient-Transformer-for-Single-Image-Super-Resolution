@@ -1,0 +1,20 @@
+# Default Value for all Computers
+---
+  ## Efficiency ##
+  usegpu : true # if you have gpu else auto use cpu
+  numWorkers : 8 # set 0 in override if out of memory
+  pinMemory : false
+
+  ## Training ##
+  epochs : 400
+  batchSize : 16
+
+  ## Hyper ##
+  model : "EfficientTransformerSR" #class name in models.py PLZ
+  startLearningRate : 0.001
+  scheduler : "" #
+  optimizer : "AdamW"
+
+  ## Checkpoint/Load ## 
+  saveBest : true
+  saveEvery : 10 # epochs
