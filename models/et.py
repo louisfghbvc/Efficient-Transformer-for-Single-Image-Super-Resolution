@@ -3,6 +3,28 @@ import torch.nn as nn
 from einops import rearrange
 from debug import PrintLayer
 
+# LayerNorm
+class PreNorm(nn.Module):
+    def __init__(self, dim, fn):
+        super().__init__()
+        self.norm = nn.LayerNorm(dim)
+        self.fn = fn
+    def forward(self, x, **kwargs):
+        return self.fn(self.norm(x), **kwargs)
+
+# TODO: not sure numbers of layer in mlp
+class FeedForward(nn.Module):
+    def __init__(self, dim, hiddenDim, dropOut = 0.):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim, hiddenDim),
+            nn.GELU(),
+            nn.Dropout(dropOut),
+            nn.Linear(hiddenDim, dim),
+            nn.Dropout(dropOut)
+        )
+    def forward(self, x):
+        return self.net(x)
 
 # Efficient Multi-Head Attention
 class EMHA(nn.Module):
@@ -43,13 +65,32 @@ class EMHA(nn.Module):
         return self.toOut(out)
 
 class EfficientTransformer(nn.Module):
-    def __init__(self):
-        pass
+    def __init__(self, dim, mlpDim, inChanngels, k=3, splitFactors=4, heads=8, dimHead=64, dropOut=0.):
+        super().__init__()
 
+        self.k = k
+        self.unFold = nn.Unfold(kernel_size=(k, k))
+
+        self.emha = PreNorm(dim, EMHA(dim, inChannels=inChanngels*k*k, splitFactors=splitFactors, heads=heads, dimHead=dimHead, dropOut=dropOut))
+        self.mlp = PreNorm(dim, FeedForward(dim, mlpDim, dropOut=dropOut))
+
+        
+    def forward(self, x):
+        _, _, h, w = x.shape
+        x = self.unFold(x)
+        x = self.emha(x) + x
+        x = self.mlp(x) + x
+        fold = nn.Fold(output_size=(h, w), kernel_size=(self.k, self.k))
+        return fold(x)
 
 if __name__ == '__main__':
     # unit test
-    m = EMHA(dim = 16, inChannels = 32)
-    # B C N
-    x = torch.tensor([float((i+1)%16) for i in range(16*32)]).reshape((1, 32, 16))
-    y = m(x)
+    # m = EMHA(dim = 16, inChannels = 32)
+    # # B C N
+    # x = torch.tensor([float((i+1)%16) for i in range(16*32)]).reshape((1, 32, 16))
+    # y = m(x)
+
+    et = EfficientTransformer(dim=4, inChanngels=18*8, mlpDim=2048)
+    # B C H W
+    x = torch.tensor([float((i+1)%16) for i in range(18*8*18)]).reshape((1, 18*8, 3, 6))
+    y = et(x)
