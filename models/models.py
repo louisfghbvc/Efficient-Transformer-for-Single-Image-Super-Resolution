@@ -1,25 +1,14 @@
+import torch
 import torch.nn as nn
 from hpb import HPB
 from et import EfficientTransformer
 
-class LCB(nn.Module):
-    def __init__(self, num=3):
+class BackBoneBlock(nn.Module):
+    def __init__(self, fm, num):
         super().__init__()
         self.arr = nn.ModuleList([])
         for _ in range(num):
-            self.arr.append(HPB())
-    
-    def forward(self, x):
-        for block in self.arr:
-            x = block(x)
-        return x
-
-class LTB(nn.Module):
-    def __init__(self, num=1):
-        super().__init__()
-        self.arr = nn.ModuleList([])
-        for _ in range(num):
-            self.arr.append(EfficientTransformer())
+            self.arr.append(fm)
     
     def forward(self, x):
         for block in self.arr:
@@ -27,28 +16,31 @@ class LTB(nn.Module):
         return x
 
 class ESRT(nn.Module):
-    def __init__(self, inChannels, outChannels):
+    def __init__(self, inChannels, scaleFactor):
         super().__init__()
-        self.conv3 = nn.Conv2d(inChannels, outChannels)
-
-        self.pixelShuffle = None
+        self.conv3 = nn.Conv2d(inChannels, 32, kernel_size=3)
 
         self.path1 = nn.Sequential(
-            LCB(),
-            LTB(),
+            BackBoneBlock(HPB(), 3),
+            BackBoneBlock(EfficientTransformer(), 1),
             self.conv3,
-            self.pixelShuffle,
-            self.conv3,
+            nn.PixelShuffle(scaleFactor),
+            nn.Conv2d(inChannels, 3, kernel_size=3),
         )
 
         self.path2 = nn.Sequential(
-            self.pixelShuffle,
-            self.conv3,
+            nn.PixelShuffle(scaleFactor),
+            nn.Conv2d(inChannels, 3, kernel_size=3),
         )
     
     def forward(self, x):
         x = self.conv3(x)
         x1, x2 = self.path1(x), self.path2(x)
         return x1 + x2
-        
+
+
+if __name__ == '__main__':
+    x = torch.tensor([float(i+1) for i in range(3*48*48)]).reshape((1, 3, 48, 48))
+    
+    model = ESRT(inChannels=2, scaleFactor=2)
 
