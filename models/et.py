@@ -74,7 +74,6 @@ class EfficientTransformer(nn.Module):
         self.emha = PreNorm(dim, EMHA(dim, inChannels=inChanngels*k*k, splitFactors=splitFactors, heads=heads, dimHead=dimHead, dropOut=dropOut))
         self.mlp = PreNorm(dim, FeedForward(dim, mlpDim, dropOut=dropOut))
 
-        
     def forward(self, x):
         _, _, h, w = x.shape
         x = self.unFold(x)
