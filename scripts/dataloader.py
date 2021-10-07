@@ -1,3 +1,5 @@
+import os
+
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
@@ -23,9 +25,6 @@ class DIV2KDataset(Dataset):
     self.train_lr_image_path = root_dir + '/train/LR/X' + str(lr_scale)
     self.valid_hr_image_path = root_dir + '/val/HR/X1'
     self.valid_lr_image_path = root_dir + '/val/LR/X' + str(lr_scale) 
-
-
-    
   
   def __len__(self):
     return 800 if self.is_training else 100
@@ -68,5 +67,60 @@ class DIV2KDataset(Dataset):
         img_crop.append(img)
         label_crop.append(label_crop)
     
+
+    return {'lr_image': np.array(img_crop), 'sr_image': np.array(label_crop)}
+
+
+class TestDataset(Dataset):
+  def __init__(self, root_dir, crop_size, testcase, lr_scale, transform=None):
+    '''
+    Args:
+      root_dir: Directory with all the images
+      testcase: test dataset (Set5, Set14, BSD100, Urban100)
+      crop_size: crop image size, if no crop, then input = -1
+      transform: transform data based on torchvision transform function
+      lr_scale: low resolution image scale
+    '''
+    self.crop_size = crop_size
+    self.testcase = testcase
+    self.transform = transform
+    self.img_path = root_dir + '/test/' + testcase + '/' + 'image_SRF_' + lr_scale
+    self.img_list = os.listdir(self.img_path)
+
+  def __len__(self):
+    return len(self.img_list)
+
+  def __getitem__(self, idx):
+    img_path = self.img_path + '/img_' + \
+        str(idx + 1).zfill(3) + '/SRF_' + str(self.lr_scale) + '_LR.png'
+    label_path = self.img_path + '/img_' + \
+        str(idx + 1).zfill(3) + '/SRF_' + str(self.lr_scale) + '_HR.png'
+
+    img = Image.open(img_path).convert('RGB')
+    label = Image.open(label_path).convert('RGB')
+
+    if self.rotation:
+      pass
+
+    if self.transform:
+      img = self.transform(img)
+      label = self.transform(label)
+
+    img_crop = []
+    label_crop = []
+    if self.crop_size != -1:
+      for i in range(16):
+        W = img.size()[1]
+        H = img.size()[2]
+
+        Ws = np.random.randint(0, W-self.crop_size-1, 1)[0]
+        Hs = np.random.randint(0, H-self.crop_size-1, 1)[0]
+
+        img = img[:, Ws:Ws+self.crop_size, Hs:Hs+self.crop_size]
+        label = label[:, Ws*self.lr_scale:(Ws+self.crop_size)*self.lr_scale,
+                      Hs*self.lr_scale: (Hs+self.crop_size)*self.lr_scale]
+
+        img_crop.append(img)
+        label_crop.append(label_crop)
 
     return {'lr_image': np.array(img_crop), 'sr_image': np.array(label_crop)}
