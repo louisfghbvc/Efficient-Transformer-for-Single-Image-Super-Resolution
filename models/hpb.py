@@ -1,4 +1,5 @@
 import torch
+from torch import tensor
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -36,8 +37,8 @@ class HPB(nn.Module):
         
 
 class Config():
-    lamRes = 0.5
-    lamX = 0.5
+    lamRes = torch.nn.Parameter(torch.ones(1))
+    lamX = torch.nn.Parameter(torch.ones(1))
 
 
 
@@ -50,6 +51,7 @@ if __name__ == "__main__":
 
     hpb = HPB(x.shape[1], x.shape[1], reScale)
     res = hpb(x)
+    # print(res.shape)
     # RU = ResidualUnit(x.shape[1])
     # res = RU(x)
         

@@ -1,14 +1,16 @@
 import torch
 import torch.nn as nn
-from hpb import HPB
+
+from hpb import HPB, Config
 from et import EfficientTransformer
+from debug import PrintLayer
 
 class BackBoneBlock(nn.Module):
-    def __init__(self, fm, num):
+    def __init__(self, num, fm, **args):
         super().__init__()
         self.arr = nn.ModuleList([])
         for _ in range(num):
-            self.arr.append(fm)
+            self.arr.append(fm(**args))
     
     def forward(self, x):
         for block in self.arr:
@@ -16,21 +18,22 @@ class BackBoneBlock(nn.Module):
         return x
 
 class ESRT(nn.Module):
-    def __init__(self, inChannels, scaleFactor):
+    def __init__(self, normDim, inChannels, mlpDim=2048, innerChannels=32, outChannels=3, scaleFactor=2):
         super().__init__()
-        self.conv3 = nn.Conv2d(inChannels, 32, kernel_size=3)
+        self.conv3 = nn.Conv2d(inChannels, innerChannels, kernel_size=3, padding=1)
+        self.adaptiveWeight = Config()
 
         self.path1 = nn.Sequential(
-            BackBoneBlock(HPB(), 3),
-            BackBoneBlock(EfficientTransformer(), 1),
-            self.conv3,
+            BackBoneBlock(3, HPB, inChannel=innerChannels, outChannel=innerChannels, reScale=self.adaptiveWeight),
+            BackBoneBlock(1, EfficientTransformer, normDim=normDim, mlpDim=mlpDim, inChannels=innerChannels),
+            nn.Conv2d(innerChannels, innerChannels, kernel_size=3, padding=1),
             nn.PixelShuffle(scaleFactor),
-            nn.Conv2d(inChannels, 3, kernel_size=3),
+            nn.Conv2d(innerChannels // (scaleFactor**2), outChannels, kernel_size=3, padding=1),
         )
 
         self.path2 = nn.Sequential(
             nn.PixelShuffle(scaleFactor),
-            nn.Conv2d(inChannels, 3, kernel_size=3),
+            nn.Conv2d(innerChannels // (scaleFactor**2), outChannels, kernel_size=3, padding=1),
         )
     
     def forward(self, x):
@@ -42,5 +45,6 @@ class ESRT(nn.Module):
 if __name__ == '__main__':
     x = torch.tensor([float(i+1) for i in range(3*48*48)]).reshape((1, 3, 48, 48))
     
-    model = ESRT(inChannels=2, scaleFactor=2)
-
+    model = ESRT(normDim=48*48, inChannels=3, mlpDim=128)
+    y = model(x)
+    print(y.shape)
