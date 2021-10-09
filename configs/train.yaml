@@ -1,0 +1,8 @@
+# Default Value for all Computers
+# 
+---
+  ## Efficiency ##
+  usegpu : true # if you have gpu else auto use cpu
+  numWorkers : 8000 # set 0 in override if out of memory
+  pinMemory : false
+
