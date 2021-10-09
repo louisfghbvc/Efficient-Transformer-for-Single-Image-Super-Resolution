@@ -1,16 +1,49 @@
-import torch
-from torch import nn 
-## (TODO) This is TEST CODE PLEASE REMOVE after implement model
-class ESRT (nn.Module):
-    def __init__(self):
+import torch.nn as nn
+
+from hpb import HPB, Config
+from et import EfficientTransformer
+from debug import PrintLayer
+
+class BackBoneBlock(nn.Module):
+    def __init__(self, num, fm, **args):
         super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(1, 2),
-            nn.ReLU(),
-            nn.Linear(2, 2),
-            nn.ReLU(),
-            nn.Linear(2, 1)
+        self.arr = nn.ModuleList([])
+        for _ in range(num):
+            self.arr.append(fm(**args))
+    
+    def forward(self, x):
+        for block in self.arr:
+            x = block(x)
+        return x
+
+class ESRT(nn.Module):
+    def __init__(self, normDim, inChannels, mlpDim=2048, innerChannels=32, outChannels=3, scaleFactor=2):
+        super().__init__()
+        self.conv3 = nn.Conv2d(inChannels, innerChannels, kernel_size=3, padding=1)
+        self.adaptiveWeight = Config()
+
+        self.path1 = nn.Sequential(
+            BackBoneBlock(3, HPB, inChannel=innerChannels, outChannel=innerChannels, reScale=self.adaptiveWeight),
+            BackBoneBlock(1, EfficientTransformer, normDim=normDim, mlpDim=mlpDim, inChannels=innerChannels),
+            nn.Conv2d(innerChannels, innerChannels, kernel_size=3, padding=1),
+            nn.PixelShuffle(scaleFactor),
+            nn.Conv2d(innerChannels // (scaleFactor**2), outChannels, kernel_size=3, padding=1),
         )
-    def forward(self,x):
-        return self.layers(x)
-## (TODO) This is TEST CODE PLEASE REMOVE after implement model
+
+        self.path2 = nn.Sequential(
+            nn.PixelShuffle(scaleFactor),
+            nn.Conv2d(innerChannels // (scaleFactor**2), outChannels, kernel_size=3, padding=1),
+        )
+    
+    def forward(self, x):
+        x = self.conv3(x)
+        x1, x2 = self.path1(x), self.path2(x)
+        return x1 + x2
+
+
+if __name__ == '__main__':
+    x = torch.tensor([float(i+1) for i in range(3*48*48)]).reshape((1, 3, 48, 48))
+    
+    model = ESRT(normDim=48*48, inChannels=3, mlpDim=128)
+    y = model(x)
+    print(y.shape)
