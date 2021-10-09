@@ -4,11 +4,12 @@ import torch
 from torch import optim
 from tqdm import tqdm
 
-
 from torch.utils.data import DataLoader
 from models.models import ESRT
 from .utils import *
 from .configParser import ConfigParser
+from scripts.dataloader import *
+from torchvision import transforms
 
 class EfficientTransformerSR:
     def __init__(self, configs= "train"):
@@ -149,9 +150,28 @@ class EfficientTransformerSR:
         self.validLosses = []
         self.learningRates = []
         self.bestValidLoss = float("inf")
-        #(TODO) : implement loader 
-        self.trainloader = torch.tensor([[[0.],[0.]] for i in range(1000)]) 
-        self.validloader = torch.tensor([[[1.],[1.]] for i in range(500)])
+        self.batchSize = 4
+        #(TODO) : implement loader
+        self.trainDataset = DIV2KDataset(
+            root_dir='./datasets/DIV2K',
+            lr_scale=2,
+            is_training=True,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+            ])
+        )
+        self.validDataset = DIV2KDataset(
+            root_dir='./datasets/DIV2K',
+            lr_scale=2,
+            is_training=False,
+            transform=transforms.Compose([
+                transforms.ToTensor(),
+            ])
+        )
+        self.trainloader = DataLoader(
+            self.trainDataset, batch_size=self.batchSize, shuffle=True)
+        self.validloader = DataLoader(
+            self.validDataset, batch_size=self.batchSize, shuffle=True)
 
 
 if __name__ == '__main__':
