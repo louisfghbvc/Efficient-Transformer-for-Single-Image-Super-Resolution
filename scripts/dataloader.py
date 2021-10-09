@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset
 from PIL import Image
 import numpy as np
-
+import torch
 
 class DIV2KDataset(Dataset):
   def __init__(self, root_dir, crop_size=48, rotation=False, transform=None, is_training=True, lr_scale = 2):
@@ -31,6 +31,7 @@ class DIV2KDataset(Dataset):
     return 800 if self.is_training else 100
   
   def __getitem__(self, idx):
+    img_path = ""
     if self.is_training:
       img_path = self.train_lr_image_path + '/' + \
           str(idx + 1).zfill(4) + 'x' + str(self.lr_scale) + '.png'
@@ -62,11 +63,9 @@ class DIV2KDataset(Dataset):
         Ws = np.random.randint(0, W-self.crop_size-1, 1)[0]
         Hs = np.random.randint(0, H-self.crop_size-1, 1)[0]
 
-        img = img[:,Ws:Ws+self.crop_size,Hs:Hs+self.crop_size]
-        label = label[:, Ws*self.lr_scale:(Ws+self.crop_size)*self.lr_scale,Hs*self.lr_scale: (Hs+self.crop_size)*self.lr_scale]
-
-        img_crop.append(img)
-        label_crop.append(label_crop)
+        img_crop.append(img[:, Ws:Ws+self.crop_size, Hs:Hs+self.crop_size])
+        label_crop.append(label[:, Ws*self.lr_scale:(Ws+self.crop_size) *
+                                self.lr_scale, Hs*self.lr_scale: (Hs+self.crop_size)*self.lr_scale])
     
 
-    return {'lr_image': np.array(img_crop), 'sr_image': np.array(label_crop)}
+    return torch.stack(img_crop), torch.stack(label_crop)
