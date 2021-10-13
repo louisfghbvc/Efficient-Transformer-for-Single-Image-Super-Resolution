@@ -3,6 +3,7 @@ import math
 import torch
 from torch import optim
 from tqdm import tqdm
+from einops import rearrange
 
 from torch.utils.data import DataLoader
 from models.models import ESRT
@@ -57,10 +58,10 @@ class EfficientTransformerSR:
     
     def modelForward(self, x, y):
         device = self.device
-        x, y = x.to(device), y.to(device)
+        x, y = map(lambda t: rearrange(t.to(device), 'b p c h w -> (b p) c h w'), (x, y))
         out = self.model(x)
         loss = self.criterion(out, y)
-        return out, loss
+        return x, y, out, loss
 
     def epochAction(self, action, loader):
         isBackward = True if action == "train" else False
@@ -74,7 +75,13 @@ class EfficientTransformerSR:
         with GradSelection():
             for x, y in batchLoader:
                 self.optimizer.zero_grad()
-                out, loss = self.modelForward(x,y)
+
+                device = self.device
+                x, y = map(lambda t: rearrange(t.to(device), 'b p c h w -> (b p) c h w'), (x, y))
+                out = self.model(x)
+                loss = self.criterion(out, y)
+
+                # out, loss = self.modelForward(x,y)
 
                 totalLoss += loss 
                 totalCorrect += torch.sum(y == out)
