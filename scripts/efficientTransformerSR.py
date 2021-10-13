@@ -67,6 +67,10 @@ class EfficientTransformerSR:
         GradSelection = Grad if isBackward else torch.no_grad
         totalLoss, totalCorrect, totalLen = 0, 0, 0
         batchLoader = tqdm(loader)
+        if isBackward:
+            self.model.train()
+        else:
+            self.model.eval()
         with GradSelection():
             for x, y in batchLoader:
                 self.optimizer.zero_grad()
@@ -142,7 +146,7 @@ class EfficientTransformerSR:
         self.bestValidLoss = max([*self.validLosses,0])
     def initParams(self):
         self.criterion = torch.nn.L1Loss()
-        self.model = ESRT()
+        self.model = ESRT(mlpDim=self.configs["mlpDim"],scaleFactor= self.configs["scaleFactor"])
         self.model = self.model.to(self.device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.configs["startLearningRate"])
         self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer )
@@ -150,28 +154,28 @@ class EfficientTransformerSR:
         self.validLosses = []
         self.learningRates = []
         self.bestValidLoss = float("inf")
-        self.batchSize = 4
-        #(TODO) : implement loader
+        self.batchSize = self.configs["batchSize"]
+        self.trainDatasetPath = PATHS.DATASETS / self.configs["datasetPath"]
         self.trainDataset = DIV2KDataset(
-            root_dir='./datasets/DIV2K',
-            lr_scale=2,
+            root_dir=self.trainDatasetPath,
+            lr_scale= self.configs["scaleFactor"],
             is_training=True,
             transform=transforms.Compose([
                 transforms.ToTensor(),
             ])
         )
         self.validDataset = DIV2KDataset(
-            root_dir='./datasets/DIV2K',
-            lr_scale=2,
+            root_dir=self.trainDatasetPath,
+            lr_scale= self.configs["scaleFactor"],
             is_training=False,
             transform=transforms.Compose([
                 transforms.ToTensor(),
             ])
         )
         self.trainloader = DataLoader(
-            self.trainDataset, batch_size=self.batchSize, shuffle=True)
+            self.trainDataset, batch_size=self.batchSize, shuffle=True, pin_memory= self.configs["pinMemory"] ,num_workers= self.configs["numWorkers"])
         self.validloader = DataLoader(
-            self.validDataset, batch_size=self.batchSize, shuffle=True)
+            self.validDataset, batch_size=self.batchSize, shuffle=True, pin_memory= self.configs["pinMemory"] ,num_workers= self.configs["numWorkers"])
 
 
 if __name__ == '__main__':
