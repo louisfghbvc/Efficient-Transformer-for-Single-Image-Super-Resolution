@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from debug import PrintLayer
+from .debug import PrintLayer
 
 # High Filter Module
 class HFM(nn.Module):

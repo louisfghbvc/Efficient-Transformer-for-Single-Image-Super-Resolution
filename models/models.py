@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from hpb import HPB, Config
-from et import EfficientTransformer
-from debug import PrintLayer
+from .hpb import HPB, Config
+from .et import EfficientTransformer
+from .debug import PrintLayer
 
 
 class BackBoneBlock(nn.Module):

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 from einops import rearrange
 from einops.layers.torch import Rearrange
-from debug import PrintLayer
+from .debug import PrintLayer
 
 # LayerNorm
 class PreNorm(nn.Module):

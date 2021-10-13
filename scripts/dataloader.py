@@ -19,6 +19,7 @@ class DIV2KDataset(Dataset):
     self.rotation = rotation
     self.transform = transform
     self.lr_scale = lr_scale
+    root_dir = str(root_dir.resolve().absolute())
     self.train_hr_image_path = root_dir + '/train/HR/X1'
     self.train_lr_image_path = root_dir + '/train/LR/X' + str(lr_scale)
     self.valid_hr_image_path = root_dir + '/val/HR/X1'
