@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from comm import defaultConv
+from .comm import defaultConv
 
 
 class ResidualUnit(nn.Module):

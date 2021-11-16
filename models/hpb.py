@@ -3,9 +3,9 @@ from torch import tensor
 import torch.nn as nn
 import torch.nn.functional as F
 
-from arfb import ARFB
-from hfm  import HFM
-from comm import defaultConv,SELayer
+from .arfb import ARFB
+from .hfm  import HFM
+from .comm import defaultConv,SELayer
 
 class HPB(nn.Module):
     def __init__(self, inChannel, outChannel, reScale):

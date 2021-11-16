@@ -6,3 +6,4 @@ PyYAML
 tensorboard
 matplotlib
 fire
+einops

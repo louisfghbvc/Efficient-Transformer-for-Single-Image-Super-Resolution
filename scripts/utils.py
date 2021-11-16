@@ -11,7 +11,7 @@ def _copy(self, target):
 
 Path.copy = _copy
 
-DEBUG = True
+DEBUG = False
 
 if DEBUG:
     warn("DEBUG mode is on, if you are not DEBUG please disable or model can't be trained")
