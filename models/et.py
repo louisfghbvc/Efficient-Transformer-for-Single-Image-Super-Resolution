@@ -57,7 +57,7 @@ class EMHA(nn.Module):
         q, k, v = map(lambda t: rearrange(
             t, 'b n (h d) -> b h n d', h=self.heads), qkv)
         qs, ks, vs = map(lambda t: t.chunk(
-            self.splitFactors, dim=1), [q, k, v])
+            self.splitFactors, dim=2), [q, k, v])
 
         pool = []
         for qi, ki, vi in zip(qs, ks, vs):
@@ -67,7 +67,7 @@ class EMHA(nn.Module):
             out = rearrange(out, 'b h n d -> b n (h d)')
             pool.append(out)
 
-        out = torch.cat(tuple(pool), dim=-1)
+        out = torch.cat(tuple(pool), dim=1)
         out = out.transpose(-1, -2)
         out = self.expansion(out)
         return out
