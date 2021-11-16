@@ -20,7 +20,7 @@ class BackBoneBlock(nn.Module):
 
 
 class ESRT(nn.Module):
-    def __init__(self, hiddenDim=32, mlpDim=256, scaleFactor=2):
+    def __init__(self, hiddenDim=32, mlpDim=128, scaleFactor=2):
         super().__init__()
         self.conv3 = nn.Conv2d(3, hiddenDim,
                                kernel_size=3, padding=1)
