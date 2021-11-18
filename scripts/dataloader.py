@@ -61,8 +61,8 @@ class DIV2KDataset(Dataset):
         W = img.size()[1]
         H = img.size()[2]
 
-        Ws = np.random.randint(0, W-self.crop_size-1, 1)[0]
-        Hs = np.random.randint(0, H-self.crop_size-1, 1)[0]
+        Ws = np.random.randint(0, W-self.crop_size+1, 1)[0]
+        Hs = np.random.randint(0, H-self.crop_size+1, 1)[0]
 
         img_crop.append(img[:, Ws:Ws+self.crop_size, Hs:Hs+self.crop_size])
         label_crop.append(label[:, Ws*self.lr_scale:(Ws+self.crop_size) *
