@@ -1,0 +1,9 @@
+tqdm
+torch
+torchvision
+torchaudio
+PyYAML
+tensorboard
+matplotlib
+fire
+einops

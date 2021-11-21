@@ -1,0 +1,31 @@
+# Default Value for all Computers
+# DO NOT CHANGE THIS FILE, CHANGE OVERRIDE FOR YOUR COMPUTER DEFAULT SETTINGS
+---
+  ## Efficiency ##
+  usegpu : true # if you have gpu else auto use cpu
+  numWorkers : 2 # set 0 in override if out of memory
+  pinMemory : false
+
+  ## Training ##
+  epochs : 400
+  batchSize : 1
+
+  ## Hyper ##
+  model : "EfficientTransformerSR" #class name in models.py PLZ
+  startLearningRate : 0.0002
+  scheduler : "" #
+  optimizer : "Adam"
+  randomFlip : true
+  scaleFactor : 2
+  patchSize : 48
+  mlpDim : 128
+  
+
+  ## Dataset ##
+  datasetPath : "DIV2K"
+
+  ## Load ##
+  startEpoch : -1 # 0 = no load , -1 = last
+  ## Checkpoint/Load ## 
+  saveBest : true
+  saveEvery : 10 # epochs
