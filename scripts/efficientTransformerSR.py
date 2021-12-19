@@ -11,7 +11,7 @@ from .utils import *
 from .configParser import ConfigParser
 from scripts.dataloader import *
 from torchvision import transforms
-
+from piq import psnr, ssim;
 class EfficientTransformerSR:
     def __init__(self, configs= "train"):
         title("Initialize")
@@ -38,12 +38,12 @@ class EfficientTransformerSR:
         self.endEpoch = end
         for epoch in range(start, end):    
             self.epoch = epoch
-            trainLoss, tranCorrect = self.epochAction("train", self.trainloader)
+            trainLoss, trainpsnr, trainssim = self.epochAction("train", self.trainloader)
             self.trainLosses.append(trainLoss.item())
             if (epoch + 1) % self.configs["saveEvery"] == 0:
                 self.save()
 
-            validLoss, validCorrect = self.epochAction("valid", self.validloader)
+            validLoss, validpsnr, validssim = self.epochAction("valid", self.validloader)
             self.validLosses.append(validLoss.item())
             self.learningRates.append(self.learningRate)
             if validLoss < self.bestValidLoss:
@@ -52,13 +52,14 @@ class EfficientTransformerSR:
                 self.save(f"bestEpoch{epoch+1}.pth")
                 info(f"save best model, valid loss {round(validLoss.item(),3)}")
             self.scheduler.step(validLoss)
+            print("valid psnr : %2.2f ssim %.3f   train psnr : %2.2f ssim %.3f"%(validpsnr,validssim,trainpsnr,trainssim))
     @property
     def learningRate(self):
         return self.optimizer.param_groups[0]['lr'] 
     
     def modelForward(self, x, y):
         device = self.device
-        x, y = map(lambda t: rearrange(t.to(device), 'b p c h w -> (b p) c h w'), (x, y))
+        # x, y = map(lambda t: rearrange(t.to(device), 'b p c h w -> (b p) c h w'), (x, y))
         out = self.model(x)
         loss = self.criterion(out, y)
         return x, y, out, loss
@@ -66,7 +67,7 @@ class EfficientTransformerSR:
     def epochAction(self, action, loader):
         isBackward = True if action == "train" else False
         GradSelection = Grad if isBackward else torch.no_grad
-        totalLoss, totalCorrect, totalLen = 0, 0, 0
+        totalLoss, totalPSNR, totalSSIM, totalLen = 0, 0, 0, 0
         batchLoader = tqdm(loader)
         if isBackward:
             self.model.train()
@@ -80,18 +81,22 @@ class EfficientTransformerSR:
                 x, y = map(lambda t: rearrange(t.to(device), 'b p c h w -> (b p) c h w'), (x, y))
                 out = self.model(x)
                 loss = self.criterion(out, y)
+                normOut = out.clone().detach()
+                normOut = normOut - normOut.min(1,keepdim=True)[0]
+                normOut /= normOut.max(1,keepdim=True)[0] 
 
                 # out, loss = self.modelForward(x,y)
 
                 totalLoss += loss 
-                totalCorrect += torch.sum(y == out)
+                totalPSNR += psnr(y, normOut)
+                totalSSIM += ssim(y, normOut)
                 totalLen += len(x)
                 if isBackward:
                     loss.backward()
                     self.optimizer.step()
                 epochProgress = f"{self.epoch+1}/{self.configs['epochs']}" if action != "test" else "1/1"
                 batchLoader.set_description(desc=f"{action} [{epochProgress}] -lglr {'%.1f'%(-math.log(self.learningRate,10))} 🕐loss {'%.2f'%(loss.item() / len(y))} ➗loss {'%.2f'%(totalLoss/totalLen)}")
-        return totalLoss/len(batchLoader), totalCorrect/len(batchLoader)
+        return totalLoss/len(batchLoader), totalPSNR/len(batchLoader), totalSSIM/len(batchLoader)
     def train(self, loader = None):
         title("Train")
         self.trainloader = loader or self.trainloader
