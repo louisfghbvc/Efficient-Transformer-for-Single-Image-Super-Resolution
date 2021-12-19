@@ -55,7 +55,7 @@ def getFinalEpoch(checkpointFolder):  # return last epoch num (final training sa
     if not p.exists():
         return 0
     files = getFiles(p, "epoch*.pth")
-    nums = [int(re.match(r'epoch(\d+)', x.stem).group(1)) for x in files]
+    nums = sorted([int(re.match(r'epoch(\d+)', x.stem).group(1)) for x in files])
     if len(nums) == 0 :
         return 0
     return nums[-1]
