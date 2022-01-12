@@ -1,3 +1,4 @@
 # override default setting of this PC
 # CREATE ANOTHER YAML FOR EACH "EXPERIMENT"
 ---
+ numWorkers : 2

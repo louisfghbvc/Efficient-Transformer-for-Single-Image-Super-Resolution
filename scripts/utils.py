@@ -59,10 +59,13 @@ def getFinalEpoch(checkpointFolder):  # return last epoch num (final training sa
     if len(nums) == 0 :
         return 0
     return nums[-1]
-
-
-
-
+def getExistPath(paths):
+    for p in paths:
+        if type(p) == str:
+            p = Path(p)
+        if p.exists():
+            return p
+    return None
     
 class Grad:
     def __enter__(self):
