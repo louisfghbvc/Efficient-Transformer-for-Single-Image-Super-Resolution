@@ -160,6 +160,10 @@ cython_debug/
 .ionide
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,python
+<<<<<<< HEAD
 Datasets/*
+=======
+datasets/*
+>>>>>>> 6f1be22fb8b66a4e5038108e1a19aad53e03500c
 configs/override.yaml
 checkpoints/*/*.pth

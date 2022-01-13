@@ -106,8 +106,11 @@ class EfficientTransformerSR:
     def test(self):
         title("Test")
         self.loadBest()
-        #(TODO) Write Loader here
-        self.epochAction("test",...)
+        #(TODO) Write Loader heredfasd\sdaf12134////
+        for testLoader in [TestLoader("Set5", lr_scale= self.configs['scaleFactor'], transform=transforms.Compose([
+                transforms.ToTensor(),
+            ]))]:
+            self.epochAction("test",testLoader )
         ...
     def saveObject(self, epoch):
         return {
