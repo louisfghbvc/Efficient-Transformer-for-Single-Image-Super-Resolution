@@ -1,12 +1,5 @@
 # override default setting of this PC
 # CREATE ANOTHER YAML FOR EACH "EXPERIMENT"
----
-<<<<<<< HEAD
-  ## Efficiency ##
-  usegpu : true # if you have gpu else auto use cpu
-  numWorkers : 2 # set 0 in override if out of memory
 
-  scaleFactor : 2
-=======
- numWorkers : 2
->>>>>>> 6f1be22fb8b66a4e5038108e1a19aad53e03500c
+
+scaleFactor : 2
