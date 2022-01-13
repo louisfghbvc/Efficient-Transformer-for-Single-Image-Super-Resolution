@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 from PIL import Image
-from .utils import PATHS, getFile, getFiler, getFiles, getFilesr, getExistPath
+from .utils import PATHS, getFile, getFiler, getFiles, getFilesr, getExistPath, convert_rgb_to_y
 from .logger import *
 import numpy as np
 import torch
@@ -55,13 +55,14 @@ class DIV2KDataset(Dataset):
     if self.transform:
       img = self.transform(img)
       label = self.transform(label)
-
+    img = convert_rgb_to_y(img).unsqueeze(0)
+    label = convert_rgb_to_y(label).unsqueeze(0)
     img_crop = []
     label_crop = []
     if self.crop_size != -1:
       for i in range(16):
         W = img.size()[1]
-        H = img.size()[2]
+        H = img.size()[2] 
 
         Ws = np.random.randint(0, W-self.crop_size+1, 1)[0]
         Hs = np.random.randint(0, H-self.crop_size+1, 1)[0]
@@ -138,6 +139,8 @@ class TestLoader(Dataset):
       img = self.transform(img)
       label = self.transform(label)
 
+    img = convert_rgb_to_y(img).unsqueeze(0)
+    label = convert_rgb_to_y(label).unsqueeze(0)
     # img_crop = []
     # label_crop = []
     # if self.crop_size != -1:
@@ -153,4 +156,4 @@ class TestLoader(Dataset):
         #                         self.lr_scale, Hs*self.lr_scale: (Hs+self.crop_size)*self.lr_scale])
     
 
-    return transforms.ToTensor()(img).unsqueeze(0).unsqueeze(0), transforms.ToTensor()(label).unsqueeze(0).unsqueeze(0)
+    return img.unsqueeze(0).unsqueeze(0), label.unsqueeze(0).unsqueeze(0)
