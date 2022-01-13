@@ -1,5 +1,8 @@
 # override default setting of this PC
 # CREATE ANOTHER YAML FOR EACH "EXPERIMENT"
 
+## Load ##
+startEpoch : 0 # 0 = no load , -1 = last
 
 scaleFactor : 2
+

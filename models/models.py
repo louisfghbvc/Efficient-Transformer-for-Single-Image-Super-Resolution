@@ -22,7 +22,7 @@ class BackBoneBlock(nn.Module):
 class ESRT(nn.Module):
     def __init__(self, hiddenDim=32, mlpDim=128, scaleFactor=2):
         super().__init__()
-        self.conv3 = nn.Conv2d(3, hiddenDim,
+        self.conv3 = nn.Conv2d(1, hiddenDim,
                                kernel_size=3, padding=1)
         
         lamRes = torch.nn.Parameter(torch.ones(1))
@@ -37,13 +37,13 @@ class ESRT(nn.Module):
             nn.Conv2d(hiddenDim, hiddenDim, kernel_size=3, padding=1),
             nn.PixelShuffle(scaleFactor),
             nn.Conv2d(hiddenDim // (scaleFactor**2),
-                      3, kernel_size=3, padding=1),
+                      1, kernel_size=3, padding=1),
         )
 
         self.path2 = nn.Sequential(
             nn.PixelShuffle(scaleFactor),
             nn.Conv2d(hiddenDim // (scaleFactor**2),
-                      3, kernel_size=3, padding=1),
+                      1, kernel_size=3, padding=1),
         )
 
     def forward(self, x):
